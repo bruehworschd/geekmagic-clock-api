@@ -21,7 +21,16 @@ Alle Endpunkte sind einfache `GET`-Requests (außer Upload), **ohne sichtbaren A
 | `/set?i_i=<sekunden>&autoplay=<0\|1>` | `GET` | Automatische Diashow konfigurieren | Rotiert bei `autoplay=1` selbständig durch alle Bilder im aktiven Verzeichnis, Intervall in Sekunden |
 | `/scan_ssid` | `GET` | WLAN-Scan (Netzwerk-Seite) | Noch nicht im Detail getestet |
 | `/v.json` | `GET` | Geräte-/Versionsinfo (vermutet) | Noch nicht im Detail dokumentiert |
-| `/updateLEDBrightness` | vermutlich `GET`/`POST` | LED-Helligkeit setzen | Parameter noch nicht im Detail dokumentiert |
+| `/brt.json`, `/timebrt.json` | vermutlich `GET` | Helligkeit (allgemein/zeitgesteuert) setzen | Aus der Firmware-Analyse (siehe unten), noch nicht live gegen ein Gerät getestet — ersetzt die frühere, falsche Vermutung `/updateLEDBrightness` |
+| `/update` | `POST` | OTA-Firmware-Update | Standard-Endpunkt der ESP8266HTTPUpdateServer-Bibliothek |
+
+### Weitere Endpunkte (aus der Firmware-Analyse, noch nicht live verifiziert)
+
+Per `strings`-Auszug aus der offiziellen Firmware-Binärdatei gefunden (siehe Abschnitt "Firmware-Analyse" unten), aber noch nicht gegen ein echtes Gerät getestet — Methode (`GET`/`POST`, Parameter) daher unbekannt:
+
+`/album.json` · `/app.json` · `/city.json` · `/colon.json` · `/config.json` · `/day.json` · `/delay.json` · `/dst.json` · `/fkey.json` · `/font.json` · `/gif.json` · `/hour12.json` · `/img.json` · `/key.json` · `/lon.json` · `/ntp.json` · `/rotation.json` · `/theme_list.json` (ersetzt die frühere, falsche Vermutung `/themeselect?getstate=<n>`, die 404 zurückgab) · `/timecolor.json` · `/tz.json` · `/unit.json` · `/wifi.json` · `/w_i.json`
+
+Dazu WLAN-Erstkonfiguration (Captive-Portal-Verhalten im AP-Modus, Standardmuster bei ESP8266-Geräten): `/wifisave`, `/generate_204`, `/fwlink`, `/hotspot-detect.html`.
 
 ## Beispiel: Bild hochladen und anzeigen
 
@@ -56,6 +65,16 @@ cat page_decoded.html
 ```
 
 Dasselbe funktioniert für andere Seiten (`settings.html`, `network.html`, `weather.html`, `time.html`) und deren eingebundene `.js`-Dateien.
+
+## Firmware-Analyse (strings-Auszug, keine Dekompilierung)
+
+Der Hersteller stellt fertige Firmware-Binärdateien selbst öffentlich bereit: [GeekMagicClock/smalltv-ultra](https://github.com/GeekMagicClock/smalltv-ultra) (inkl. `md5sum.txt` zur Integritätsprüfung). Ein reiner `strings`-Auszug aus dieser `.bin`-Datei (keine Disassemblierung/Dekompilierung, nur lesbare Textfragmente extrahieren) legt alle vom Gerät intern verwendeten Pfade offen, auch solche, die die Weboberfläche nicht direkt referenziert:
+
+```bash
+strings -n 6 FW-Smalltv-Ultra-VX.X.XX.bin | grep -E '^/[a-zA-Z_][a-zA-Z0-9_/.]*$' | sort -u
+```
+
+Firmware läuft auf **ESP8266** (laut enthaltener Fehlermeldung "Firmware ONLY supports ESP8266!!!"), Arduino-Core. Bei diesem Auszug wurden **keine Passwörter, Tokens oder sonstigen Zugangsdaten** im Klartext gefunden — passt zum Befund, dass die HTTP-API keinerlei sichtbaren Auth-Schutz hat.
 
 ## Siehe auch
 
