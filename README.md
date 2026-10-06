@@ -76,6 +76,15 @@ strings -n 6 FW-Smalltv-Ultra-VX.X.XX.bin | grep -E '^/[a-zA-Z_][a-zA-Z0-9_/.]*$
 
 Firmware läuft auf **ESP8266** (laut enthaltener Fehlermeldung "Firmware ONLY supports ESP8266!!!"), Arduino-Core. Bei diesem Auszug wurden **keine Passwörter, Tokens oder sonstigen Zugangsdaten** im Klartext gefunden — passt zum Befund, dass die HTTP-API keinerlei sichtbaren Auth-Schutz hat.
 
+## Bekannte Fallstricke
+
+- **`/set?img=` überschreibt eine extern gesteuerte Rotation.** Falls das Gerät schon über eine andere Automatisierung läuft (z. B. eine Home-Assistant-Integration mit mehreren rotierenden Widgets/Views), schaltet ein eigener `/set?img=`-Aufruf das Gerät fest auf dieses eine Bild um — die bestehende Rotation läuft danach nicht von selbst weiter. Vor eigener Automatisierung prüfen, ob das Gerät schon anderweitig gesteuert wird.
+- **Pillow-Font-Fallback-Falle beim eigenen Bild-Rendern:** `ImageFont.truetype()` mit einem hartcodierten Schriftart-Pfad (z. B. DejaVu) schlägt auf vielen Systemen fehl, weil die Datei dort schlicht nicht existiert. Ein `except OSError: return ImageFont.load_default()` als Fallback **ohne Größenangabe** ignoriert dabei jede gewünschte Schriftgröße — alle Texte landen gleich (winzig) groß, unabhängig vom übergebenen `size`-Parameter. Fix: neuere Pillow-Versionen (≥10.1) können den eingebauten Default-Font direkt skalieren — `ImageFont.load_default(size=64)` funktioniert ganz ohne externe Schriftdatei. Siehe [`examples/render_and_display.py`](examples/render_and_display.py).
+
+## Beispielskript
+
+[`examples/render_and_display.py`](examples/render_and_display.py) — holt Werte von einer beliebigen JSON-Quelle, rendert daraus ein 240×240-Dashboard-Bild und lädt es automatisch hoch + aktiviert es. Als Ausgangspunkt gedacht, nicht als fertige Lösung.
+
 ## Siehe auch
 
 - [GeekMagicClock/gif](https://github.com/GeekMagicClock/gif) — Beispiel-GIFs des Herstellers, in der Geräte-Weboberfläche selbst verlinkt.
