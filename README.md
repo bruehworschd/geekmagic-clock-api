@@ -83,7 +83,7 @@ Firmware läuft auf **ESP8266** (laut enthaltener Fehlermeldung "Firmware ONLY s
 
 ## Beispielskript
 
-[`examples/render_and_display.py`](examples/render_and_display.py) — holt Werte von einer beliebigen JSON-Quelle, rendert daraus ein 240×240-Dashboard-Bild und lädt es automatisch hoch + aktiviert es. Als Ausgangspunkt gedacht, nicht als fertige Lösung.
+[`examples/render_and_display.py`](examples/render_and_display.py) — holt Werte von einer beliebigen JSON-Quelle, rendert daraus ein 240×240-Dashboard-Bild (2×2-Raster, vier Kacheln mit Label + großem Wert) und lädt es automatisch hoch + aktiviert es. Live getestet und für gut lesbar befunden. Als Ausgangspunkt gedacht, nicht als fertige Lösung — Icons/Symbole statt Text ließen sich mit Pillows `ImageDraw` (einfache Formen) oder `Image.paste()` (fertige PNG-Icons) ergänzen; Unicode-Emojis funktionieren mit dem eingebauten Default-Font dagegen nicht zuverlässig.
 
 ## Siehe auch
 

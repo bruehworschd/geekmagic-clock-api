@@ -22,7 +22,10 @@ def fetch_values():
         return json.loads(r.read())
 
 
-def render_image(line1: str, line2: str) -> str:
+def render_image(values: dict) -> str:
+    """values: dict mit genau 4 Eintraegen {label: (wert, einheit)}, z.B.
+    {"PM10": ("7.53", ""), "PM2.5": ("2.97", ""), "Temp": ("20", "C"), "Feuchte": ("51", "%")}
+    """
     img = Image.new("RGB", (240, 240), color=(10, 10, 15))
     draw = ImageDraw.Draw(img)
 
@@ -35,14 +38,28 @@ def render_image(line1: str, line2: str) -> str:
     def font(size):
         return ImageFont.load_default(size=size)
 
-    def centered_text(y, text, f, fill):
-        bbox = draw.textbbox((0, 0), text, font=f)
-        w = bbox[2] - bbox[0]
-        draw.text(((240 - w) / 2, y), text, font=f, fill=fill)
-
     cyan = (0, 255, 255)
-    centered_text(60, line1, font(64), cyan)
-    centered_text(140, line2, font(64), cyan)
+    dim = (140, 230, 230)
+    f_label = font(16)
+    f_value = font(38)
+
+    def tile(cx, cy, label, value, unit=""):
+        bbox_l = draw.textbbox((0, 0), label, font=f_label)
+        lw = bbox_l[2] - bbox_l[0]
+        draw.text((cx - lw / 2, cy - 44), label, font=f_label, fill=dim)
+
+        text = f"{value}{unit}"
+        bbox_v = draw.textbbox((0, 0), text, font=f_value)
+        vw = bbox_v[2] - bbox_v[0]
+        draw.text((cx - vw / 2, cy - 22), text, font=f_value, fill=cyan)
+
+    # 2x2-Raster -- Reihenfolge: oben-links, oben-rechts, unten-links, unten-rechts
+    positions = [(60, 70), (180, 70), (60, 170), (180, 170)]
+    for (cx, cy), (label, (value, unit)) in zip(positions, values.items()):
+        tile(cx, cy, label, value, unit)
+
+    draw.line([(120, 20), (120, 220)], fill=(0, 80, 80), width=1)
+    draw.line([(20, 120), (220, 120)], fill=(0, 80, 80), width=1)
 
     img.save(OUT_PATH, "JPEG", quality=90)
     return OUT_PATH
@@ -74,6 +91,12 @@ def upload_and_activate(img_path: str):
 if __name__ == "__main__":
     data = fetch_values()
     # Beispielhafte Extraktion -- an eigenes JSON-Format anpassen
-    path = render_image(str(data.get("line1", "-")), str(data.get("line2", "-")))
+    values = {
+        "Wert A": (str(data.get("a", "-")), ""),
+        "Wert B": (str(data.get("b", "-")), ""),
+        "Wert C": (str(data.get("c", "-")), ""),
+        "Wert D": (str(data.get("d", "-")), ""),
+    }
+    path = render_image(values)
     print("Bild gespeichert:", path)
     upload_and_activate(path)
